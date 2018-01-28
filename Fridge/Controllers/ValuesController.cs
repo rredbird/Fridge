@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Fridge.Controllers
 {
-    //[Authorize]
+    [Authorize]
     [Route("api/[controller]")]
     public class ValuesController : Controller
     {

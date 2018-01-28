@@ -10,6 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Owin.Security.ActiveDirectory;
+using Owin;
 
 namespace Fridge
 {
@@ -17,10 +19,10 @@ namespace Fridge
     {
         public Startup(IConfiguration configuration)
         {
-            Configuration = configuration;
+            ConfigurationManager = configuration;
         }
 
-        public IConfiguration Configuration { get; }
+        public IConfiguration ConfigurationManager { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -29,7 +31,7 @@ namespace Fridge
             {
                 sharedOptions.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             })
-            .AddAzureAdBearer(options => Configuration.Bind("AzureAd", options));
+            .AddAzureAdBearer(options => ConfigurationManager.Bind("AzureAd", options));
 
             services.AddMvc();
         }
@@ -42,10 +44,25 @@ namespace Fridge
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseIdentity();
             app.UseStaticFiles();
             app.UseAuthentication();
+            app.UseOwin();
             app.UseMvc();
+        }
+
+        public void Configuration(IAppBuilder app)
+        {
+            ConfigureAuth(app);
+        }
+
+        public void ConfigureAuth(IAppBuilder app)
+        {
+            app.UseWindowsAzureActiveDirectoryBearerAuthentication(
+                new WindowsAzureActiveDirectoryBearerAuthenticationOptions
+                {
+                    Audience = ConfigurationManager["ida:Audience"],
+                    Tenant = ConfigurationManager["ida:Tenant"]
+                });
         }
     }
 }
